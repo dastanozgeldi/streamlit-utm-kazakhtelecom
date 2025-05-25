@@ -232,7 +232,7 @@ for _, drone in data.iterrows():
         <p>Longitude: {drone['longitude']:.6f}</p>
         <p>Last Update: {drone['created_at'].strftime('%H:%M:%S')}</p>
         {pilot_info}
-        <a href="https://www.youtube.com/watch?v=hXD8itTKdY0" target="_blank" 
+        <a href="https://www.youtube.com/watch?v=82x5c6JyD4U" target="_blank" 
            style='display: inline-block; background-color: #4CAF50; color: white; padding: 8px 16px; 
            border: none; border-radius: 4px; cursor: pointer; text-decoration: none; text-align: center; width: 100%; margin-top: 10px;'>
            Stream Video
