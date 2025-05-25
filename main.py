@@ -18,6 +18,130 @@ DB_PASSWORD = "drone_password"
 DB_HOST = "localhost"
 DB_PORT = "5432"
 
+# Define restricted areas
+RESTRICTED_AREAS = {
+    'akorda': {
+        'name': 'Акорда',
+        'description': 'Президентский дворец Казахстана',
+        'coordinates': [
+            [51.1255, 71.4305],  # Northwest
+            [51.1255, 71.4355],  # Northeast
+            [51.1225, 71.4355],  # Southeast
+            [51.1225, 71.4305],  # Southwest
+            [51.1255, 71.4305]   # Close the polygon
+        ],
+        'color': 'red'
+    },
+    'parliament': {
+        'name': 'Парламент',
+        'description': 'Здание Парламента Республики Казахстан',
+        'coordinates': [
+            [51.1275, 71.4455],
+            [51.1275, 71.4505],
+            [51.1245, 71.4505],
+            [51.1245, 71.4455],
+            [51.1275, 71.4455]
+        ],
+        'color': 'red'
+    },
+    'khan_shater': {
+        'name': 'Хан Шатыр',
+        'description': 'Торгово-развлекательный центр',
+        'coordinates': [
+            [51.1305, 71.4055],
+            [51.1305, 71.4105],
+            [51.1275, 71.4105],
+            [51.1275, 71.4055],
+            [51.1305, 71.4055]
+        ],
+        'color': 'orange'
+    },
+    'bayterek': {
+        'name': 'Байтерек',
+        'description': 'Национальный символ Казахстана',
+        'coordinates': [
+            [51.1285, 71.4305],
+            [51.1285, 71.4355],
+            [51.1255, 71.4355],
+            [51.1255, 71.4305],
+            [51.1285, 71.4305]
+        ],
+        'color': 'orange'
+    },
+    'nazarbayev_center': {
+        'name': 'Центр Назарбаева',
+        'description': 'Музей и культурный центр',
+        'coordinates': [
+            [51.1325, 71.4255],
+            [51.1325, 71.4305],
+            [51.1295, 71.4305],
+            [51.1295, 71.4255],
+            [51.1325, 71.4255]
+        ],
+        'color': 'orange'
+    },
+    'military_base': {
+        'name': 'Военная база',
+        'description': 'Военное подразделение',
+        'coordinates': [
+            [51.1355, 71.4155],
+            [51.1355, 71.4205],
+            [51.1325, 71.4205],
+            [51.1325, 71.4155],
+            [51.1355, 71.4155]
+        ],
+        'color': 'red'
+    },
+    'airport': {
+        'name': 'Международный аэропорт',
+        'description': 'Аэропорт Нурсултан Назарбаев',
+        'coordinates': [
+            [51.0225, 71.4655],
+            [51.0225, 71.4755],
+            [51.0175, 71.4755],
+            [51.0175, 71.4655],
+            [51.0225, 71.4655]
+        ],
+        'color': 'red'
+    },
+    'train_station': {
+        'name': 'Железнодорожный вокзал',
+        'description': 'Главный железнодорожный вокзал',
+        'coordinates': [
+            [51.1825, 71.4155],
+            [51.1825, 71.4205],
+            [51.1795, 71.4205],
+            [51.1795, 71.4155],
+            [51.1825, 71.4155]
+        ],
+        'color': 'orange'
+    },
+    'power_plant': {
+        'name': 'ТЭЦ-2',
+        'description': 'Теплоэлектроцентраль',
+        'coordinates': [
+            [51.1925, 71.4255],
+            [51.1925, 71.4305],
+            [51.1895, 71.4305],
+            [51.1895, 71.4255],
+            [51.1925, 71.4255]
+        ],
+        'color': 'red'
+    },
+    'water_reservoir': {
+        'name': 'Водохранилище',
+        'description': 'Главное водохранилище города',
+        'coordinates': [
+            [51.1425, 71.3955],
+            [51.1425, 71.4005],
+            [51.1395, 71.4005],
+            [51.1395, 71.3955],
+            [51.1425, 71.3955]
+        ],
+        'color': 'orange'
+    }
+}
+
 def remove_drone(drone_id):
     try:
         conn = psycopg2.connect(
@@ -209,8 +333,30 @@ with st.sidebar:
 
 
 # Create a map centered on Astana
-m = folium.Map(location=[51.1694, 71.4491], zoom_start=12)
+m = folium.Map(location=[51.1694, 71.4491], zoom_start=12)  # Adjusted zoom level to show more areas
 marker_cluster = MarkerCluster().add_to(m)
+
+# Add restricted areas
+for area_id, area in RESTRICTED_AREAS.items():
+    # Create polygon for restricted area
+    folium.Polygon(
+        locations=area['coordinates'],
+        color=area['color'],
+        fill=True,
+        fill_color=area['color'],
+        fill_opacity=0.2,
+        popup=folium.Popup(
+            f"""
+            <div style='width: 200px'>
+                <h4>{area['name']}</h4>
+                <p>{area['description']}</p>
+                <p style='color: {area['color']}; font-weight: bold;'>Ограниченная зона</p>
+            </div>
+            """,
+            max_width=300
+        ),
+        tooltip=f"Ограниченная зона: {area['name']}"
+    ).add_to(m)
 
 # Add markers for each drone
 for _, drone in data.iterrows():
@@ -254,3 +400,13 @@ with st.container():
 if st.button('Refresh Data'):
     st.cache_data.clear()
     st.rerun()
+
+# Add a legend
+legend_html = """
+<div style="position: fixed; bottom: 50px; left: 50px; z-index: 1000; background-color: white; padding: 10px; border: 2px solid grey; border-radius: 5px;">
+    <p><strong>Ограниченные зоны:</strong></p>
+    <p><span style="color: red;">■</span> Высокая опасность</p>
+    <p><span style="color: orange;">■</span> Средняя опасность</p>
+</div>
+"""
+m.get_root().html.add_child(folium.Element(legend_html))
