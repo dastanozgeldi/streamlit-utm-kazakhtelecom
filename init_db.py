@@ -1,5 +1,4 @@
 import psycopg2
-from psycopg2 import sql
 
 # Database connection parameters
 DB_NAME = "drone_db"
