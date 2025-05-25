@@ -11,12 +11,8 @@ st.set_page_config(layout="wide")
 
 st.header('Карта активных дронов')
 
-# Database connection parameters
-DB_NAME = "drone_db"
-DB_USER = "drone_user"
-DB_PASSWORD = "drone_password"
-DB_HOST = "localhost"
-DB_PORT = "5432"
+# Database connection string
+DATABASE_URL = "postgresql://drone_user:drone_password@localhost:5432/drone_db"
 
 # Define restricted areas
 RESTRICTED_AREAS = {
@@ -144,14 +140,7 @@ RESTRICTED_AREAS = {
 
 def remove_drone(drone_id):
     try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT
-        )
-        
+        conn = psycopg2.connect(DATABASE_URL)
         cur = conn.cursor()
         
         delete_query = """
@@ -174,14 +163,7 @@ def remove_drone(drone_id):
 
 def add_new_drone(drone_id, latitude, longitude, pilot_id=None):
     try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT
-        )
-        
+        conn = psycopg2.connect(DATABASE_URL)
         cur = conn.cursor()
         
         insert_query = """
@@ -212,13 +194,7 @@ def add_new_drone(drone_id, latitude, longitude, pilot_id=None):
 def load_data():
     try:
         # Connect to PostgreSQL
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT
-        )
+        conn = psycopg2.connect(DATABASE_URL)
         
         # Query to get the most recent position for each drone with pilot details
         query = """
@@ -254,13 +230,7 @@ def load_data():
 @st.cache_data(ttl=30)  # Cache for 30 seconds
 def load_pilots():
     try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT
-        )
+        conn = psycopg2.connect(DATABASE_URL)
         
         query = """
         SELECT id, first_name, last_name, phone_number
