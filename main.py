@@ -48,7 +48,7 @@ def remove_drone(drone_id):
         if 'conn' in locals():
             conn.close()
 
-def add_new_drone(drone_id, latitude, longitude):
+def add_new_drone(drone_id, latitude, longitude, pilot_id=None):
     try:
         conn = psycopg2.connect(
             dbname=DB_NAME,
@@ -61,15 +61,16 @@ def add_new_drone(drone_id, latitude, longitude):
         cur = conn.cursor()
         
         insert_query = """
-        INSERT INTO drones (drone_id, latitude, longitude, created_at)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO drones (drone_id, latitude, longitude, created_at, pilot_id)
+        VALUES (%s, %s, %s, %s, %s)
         """
         
         cur.execute(insert_query, (
             drone_id,
             latitude,
             longitude,
-            datetime.now()
+            datetime.now(),
+            pilot_id
         ))
         
         conn.commit()
@@ -126,11 +127,40 @@ def load_data():
         st.error(f"Error loading drone data from database: {str(e)}")
         return pd.DataFrame(columns=['drone_id', 'latitude', 'longitude', 'created_at', 'pilot_id', 'first_name', 'last_name', 'phone_number'])
     
+@st.cache_data(ttl=30)  # Cache for 30 seconds
+def load_pilots():
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+        
+        query = """
+        SELECT id, first_name, last_name, phone_number
+        FROM pilots
+        ORDER BY first_name, last_name;
+        """
+        
+        pilots = pd.read_sql_query(query, conn)
+        conn.close()
+        return pilots
+    except Exception as e:
+        st.error(f"Error loading pilots: {str(e)}")
+        return pd.DataFrame(columns=['id', 'first_name', 'last_name', 'phone_number'])
+
 data = load_data()
 
 # Sidebar form for adding new drones
 with st.sidebar:
     st.header("Add New Drone")
+    
+    # Load pilots for the dropdown
+    pilots_df = load_pilots()
+    pilot_options = {f"{row['first_name']} {row['last_name']}": row['id'] 
+                    for _, row in pilots_df.iterrows()}
     
     # Form for new drone entry
     with st.form("new_drone_form"):
@@ -138,13 +168,23 @@ with st.sidebar:
         latitude = st.number_input("Latitude", value=51.1694, format="%.6f")
         longitude = st.number_input("Longitude", value=71.4491, format="%.6f")
         
+        # Add pilot selection dropdown
+        selected_pilot = st.selectbox(
+            "Select Pilot",
+            options=["No Pilot"] + list(pilot_options.keys()),
+            index=0
+        )
+        
         submitted = st.form_submit_button("Add Drone")
         
         if submitted:
             if not drone_id:
                 st.error("Please enter a Drone ID")
             else:
-                if add_new_drone(drone_id, latitude, longitude):
+                # Get pilot_id if a pilot was selected
+                pilot_id = None if selected_pilot == "No Pilot" else pilot_options[selected_pilot]
+                
+                if add_new_drone(drone_id, latitude, longitude, pilot_id):
                     st.success(f"Successfully added {drone_id}")
                     st.cache_data.clear()  # Clear cache to refresh the map
                     st.rerun()
