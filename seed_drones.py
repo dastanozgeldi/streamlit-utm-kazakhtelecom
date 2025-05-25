@@ -2,8 +2,9 @@ import os
 import psycopg2
 from datetime import datetime, timedelta
 import random
+import streamlit as st
 
-DATABASE_URL = os.getenv('DATABASE_URL')
+DATABASE_URL = st.secrets["db_url"]
 
 def get_pilot_ids():
     try:

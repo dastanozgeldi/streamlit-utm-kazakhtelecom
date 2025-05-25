@@ -1,8 +1,9 @@
 import os
 import psycopg2
 import random
+import streamlit as st
 
-DATABASE_URL = os.getenv('DATABASE_URL')
+DATABASE_URL = st.secrets["db_url"]
 
 def generate_pilot_data(num_pilots=10):
     first_names = ["Азамат", "Айбек", "Алмас", "Асхат", "Бауржан", "Дамир", "Ерлан", "Жандар", "Кайрат", "Марат", 

@@ -1,8 +1,9 @@
 import os
 import psycopg2
 from psycopg2 import sql
+import streamlit as st
 
-DATABASE_URL = os.getenv('DATABASE_URL')
+DATABASE_URL = st.secrets["db_url"]
 
 def create_database():
     try:

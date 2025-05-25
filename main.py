@@ -15,7 +15,7 @@ st.set_page_config(layout="wide")
 st.header('Карта активных дронов')
 
 # Database connection string
-DATABASE_URL = os.getenv('DATABASE_URL')
+DATABASE_URL = st.secrets["db_url"]
 
 # Define restricted areas
 RESTRICTED_AREAS = {

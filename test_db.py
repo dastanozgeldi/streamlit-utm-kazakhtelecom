@@ -4,7 +4,9 @@ import psycopg2
 
 load_dotenv()
 
-DATABASE_URL = os.getenv('DATABASE_URL')
+import streamlit as st
+
+DATABASE_URL = st.secrets["db_url"]
 
 def test_connection():
     try:
