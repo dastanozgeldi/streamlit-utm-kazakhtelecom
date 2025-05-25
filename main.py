@@ -55,19 +55,11 @@ def load_data():
         st.error(f"Error loading drone data from database: {str(e)}")
         return pd.DataFrame(columns=['drone_id', 'latitude', 'longitude', 'created_at'])
 
-# Create a text element and let the reader know the data is loading.
-data_load_state = st.text('Loading drone data...')
-# Load the drone data
+
 data = load_data()
-# Notify the reader that the data was successfully loaded.
-data_load_state.text("Done! (using st.cache_data)")
-
-if st.checkbox('Show raw data'):
-    st.subheader('Raw data')
-    st.write(data)
-
-# Display the map of all active drones
-st.subheader('Map of all active drones')
+# if st.checkbox('Show raw data'):
+#     st.subheader('Raw data')
+#     st.write(data)
 
 # Create a map centered on Astana
 m = folium.Map(location=[51.1694, 71.4491], zoom_start=12)
@@ -98,7 +90,7 @@ for _, drone in data.iterrows():
 
 # Display the map
 with st.container():
-    st_folium(m, width="100%", height=600)
+    st_folium(m, width="100%")
 
 # Add a refresh button
 if st.button('Refresh Data'):
