@@ -4,6 +4,7 @@ import folium
 from streamlit_folium import st_folium
 from folium.plugins import MarkerCluster
 import psycopg2
+from datetime import datetime
 
 # Set page to wide mode
 st.set_page_config(layout="wide")
@@ -16,6 +17,41 @@ DB_USER = "drone_user"
 DB_PASSWORD = "drone_password"
 DB_HOST = "localhost"
 DB_PORT = "5432"
+
+def add_new_drone(drone_id, latitude, longitude):
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+        
+        cur = conn.cursor()
+        
+        insert_query = """
+        INSERT INTO drones (drone_id, latitude, longitude, created_at)
+        VALUES (%s, %s, %s, %s)
+        """
+        
+        cur.execute(insert_query, (
+            drone_id,
+            latitude,
+            longitude,
+            datetime.now()
+        ))
+        
+        conn.commit()
+        return True
+    except Exception as e:
+        st.error(f"Error adding drone: {str(e)}")
+        return False
+    finally:
+        if 'cur' in locals():
+            cur.close()
+        if 'conn' in locals():
+            conn.close()
 
 @st.cache_data(ttl=30)  # Cache for 30 seconds
 def load_data():
@@ -41,7 +77,8 @@ def load_data():
             ORDER BY drone_id, created_at DESC
         )
         SELECT * FROM latest_positions
-        ORDER BY created_at DESC;
+        ORDER BY created_at DESC
+        LIMIT 10;
         """
         
         # Read the query results into a pandas DataFrame
@@ -55,6 +92,26 @@ def load_data():
         st.error(f"Error loading drone data from database: {str(e)}")
         return pd.DataFrame(columns=['drone_id', 'latitude', 'longitude', 'created_at'])
 
+# Sidebar form for adding new drones
+with st.sidebar:
+    st.header("Add New Drone")
+    
+    # Form for new drone entry
+    with st.form("new_drone_form"):
+        drone_id = st.text_input("Drone ID", placeholder="DRONE-XXX")
+        latitude = st.number_input("Latitude", value=51.1694, format="%.6f")
+        longitude = st.number_input("Longitude", value=71.4491, format="%.6f")
+        
+        submitted = st.form_submit_button("Add Drone")
+        
+        if submitted:
+            if not drone_id:
+                st.error("Please enter a Drone ID")
+            else:
+                if add_new_drone(drone_id, latitude, longitude):
+                    st.success(f"Successfully added {drone_id}")
+                    st.cache_data.clear()  # Clear cache to refresh the map
+                    st.rerun()
 
 data = load_data()
 # if st.checkbox('Show raw data'):
