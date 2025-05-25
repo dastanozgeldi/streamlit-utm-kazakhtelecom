@@ -3,13 +3,16 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import random
+import folium
+from streamlit_folium import st_folium
+from folium.plugins import MarkerCluster
 
 # Set page to wide mode
 st.set_page_config(layout="wide")
 
 st.title('Active Drones Map')
 
-def generate_fake_drone_data(num_drones=20):
+def generate_fake_drone_data(num_drones=200):
     # Base coordinates (Astana, Kazakhstan)
     base_lat = 51.1694
     base_lon = 71.4491
@@ -57,9 +60,42 @@ if st.checkbox('Show raw data'):
 
 # Display the map of all active drones
 st.subheader('Map of all active drones')
-# Create a full-width container for the map
+
+# Create a map centered on Astana
+m = folium.Map(location=[51.1694, 71.4491], zoom_start=12)
+marker_cluster = MarkerCluster().add_to(m)
+
+# Add markers for each drone
+for _, drone in data.iterrows():
+    # Create popup content with drone details and stream button
+    popup_content = f"""
+    <div style='width: 200px'>
+        <h4>{drone['id']}</h4>
+        <p>Latitude: {drone['latitude']:.6f}</p>
+        <p>Longitude: {drone['longitude']:.6f}</p>
+        <p>Last Update: {drone['created_at'].strftime('%H:%M:%S')}</p>
+        <button onclick='streamVideo("{drone['id']}")' style='background-color: #4CAF50; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;'>Stream Video</button>
+    </div>
+    """
+    
+    folium.Marker(
+        location=[drone['latitude'], drone['longitude']],
+        popup=folium.Popup(popup_content, max_width=300),
+        tooltip=drone['id']
+    ).add_to(marker_cluster)
+
+# Add JavaScript for the stream button
+m.get_root().html.add_child(folium.Element("""
+<script>
+function streamVideo(droneId) {
+    window.open('https://www.youtube.com/watch?v=hXD8itTKdY0', '_blank');
+}
+</script>
+"""))
+
+# Display the map
 with st.container():
-    st.map(data, use_container_width=True)
+    st_folium(m, width="100%", height=600)
 
 # Add a refresh button
 if st.button('Refresh Data'):
