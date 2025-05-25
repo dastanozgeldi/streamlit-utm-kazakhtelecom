@@ -95,15 +95,20 @@ def load_data():
             port=DB_PORT
         )
         
-        # Query to get the most recent position for each drone
+        # Query to get the most recent position for each drone with pilot details
         query = """
         WITH latest_positions AS (
             SELECT DISTINCT ON (drone_id)
-                drone_id,
-                latitude,
-                longitude,
-                created_at
-            FROM drones
+                d.drone_id,
+                d.latitude,
+                d.longitude,
+                d.created_at,
+                d.pilot_id,
+                p.first_name,
+                p.last_name,
+                p.phone_number
+            FROM drones d
+            LEFT JOIN pilots p ON d.pilot_id = p.id
             ORDER BY drone_id, created_at DESC
         )
         SELECT * FROM latest_positions
@@ -119,7 +124,7 @@ def load_data():
         return data
     except Exception as e:
         st.error(f"Error loading drone data from database: {str(e)}")
-        return pd.DataFrame(columns=['drone_id', 'latitude', 'longitude', 'created_at'])
+        return pd.DataFrame(columns=['drone_id', 'latitude', 'longitude', 'created_at', 'pilot_id', 'first_name', 'last_name', 'phone_number'])
     
 data = load_data()
 
@@ -169,16 +174,27 @@ marker_cluster = MarkerCluster().add_to(m)
 
 # Add markers for each drone
 for _, drone in data.iterrows():
-    # Create popup content with drone details and stream button
+    # Create popup content with drone and pilot details
+    pilot_info = ""
+    if pd.notna(drone['pilot_id']):
+        pilot_info = f"""
+        <div style='margin-top: 10px; padding-top: 10px; border-top: 1px solid #ccc;'>
+            <h4 style='margin: 0 0 5px 0;'>Пилот</h4>
+            <p style='margin: 2px 0;'><strong>Имя:</strong> {drone['first_name']} {drone['last_name']}</p>
+            <p style='margin: 2px 0;'><strong>Телефон:</strong> {drone['phone_number']}</p>
+        </div>
+        """
+    
     popup_content = f"""
     <div style='width: 200px'>
         <h4>{drone['drone_id']}</h4>
         <p>Latitude: {drone['latitude']:.6f}</p>
         <p>Longitude: {drone['longitude']:.6f}</p>
         <p>Last Update: {drone['created_at'].strftime('%H:%M:%S')}</p>
+        {pilot_info}
         <a href="https://www.youtube.com/watch?v=hXD8itTKdY0" target="_blank" 
            style='display: inline-block; background-color: #4CAF50; color: white; padding: 8px 16px; 
-           border: none; border-radius: 4px; cursor: pointer; text-decoration: none; text-align: center; width: 100%; margin-bottom: 8px;'>
+           border: none; border-radius: 4px; cursor: pointer; text-decoration: none; text-align: center; width: 100%; margin-top: 10px;'>
            Stream Video
         </a>
     </div>
