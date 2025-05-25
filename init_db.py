@@ -1,23 +1,13 @@
+import os
 import psycopg2
 from psycopg2 import sql
 
-# Database connection parameters
-DB_NAME = "drone_db"
-DB_USER = "drone_user"
-DB_PASSWORD = "drone_password"
-DB_HOST = "localhost"
-DB_PORT = "5432"
+DATABASE_URL = os.getenv('DATABASE_URL')
 
 def create_database():
     try:
         # Connect to PostgreSQL
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT
-        )
+        conn = psycopg2.connect(DATABASE_URL)
         
         # Create a cursor
         cur = conn.cursor()

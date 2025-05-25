@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import folium
@@ -5,6 +6,8 @@ from streamlit_folium import st_folium
 from folium.plugins import MarkerCluster
 import psycopg2
 from datetime import datetime
+from dotenv import load_dotenv
+load_dotenv()
 
 # Set page to wide mode
 st.set_page_config(layout="wide")
@@ -12,7 +15,7 @@ st.set_page_config(layout="wide")
 st.header('Карта активных дронов')
 
 # Database connection string
-DATABASE_URL = "postgresql://drone_user:drone_password@localhost:5432/drone_db"
+DATABASE_URL = os.getenv('DATABASE_URL')
 
 # Define restricted areas
 RESTRICTED_AREAS = {
