@@ -9,7 +9,7 @@ from datetime import datetime
 # Set page to wide mode
 st.set_page_config(layout="wide")
 
-st.title('Active Drones Map')
+st.header('Карта активных дронов')
 
 # Database connection parameters
 DB_NAME = "drone_db"
@@ -17,6 +17,36 @@ DB_USER = "drone_user"
 DB_PASSWORD = "drone_password"
 DB_HOST = "localhost"
 DB_PORT = "5432"
+
+def remove_drone(drone_id):
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+        
+        cur = conn.cursor()
+        
+        delete_query = """
+        DELETE FROM drones
+        WHERE drone_id = %s;
+        """
+        
+        cur.execute(delete_query, (drone_id,))
+        
+        conn.commit()
+        return True
+    except Exception as e:
+        st.error(f"Error removing drone: {str(e)}")
+        return False
+    finally:
+        if 'cur' in locals():
+            cur.close()
+        if 'conn' in locals():
+            conn.close()
 
 def add_new_drone(drone_id, latitude, longitude):
     try:
@@ -77,8 +107,7 @@ def load_data():
             ORDER BY drone_id, created_at DESC
         )
         SELECT * FROM latest_positions
-        ORDER BY created_at DESC
-        LIMIT 10;
+        ORDER BY created_at DESC;
         """
         
         # Read the query results into a pandas DataFrame
@@ -91,6 +120,8 @@ def load_data():
     except Exception as e:
         st.error(f"Error loading drone data from database: {str(e)}")
         return pd.DataFrame(columns=['drone_id', 'latitude', 'longitude', 'created_at'])
+    
+data = load_data()
 
 # Sidebar form for adding new drones
 with st.sidebar:
@@ -112,11 +143,25 @@ with st.sidebar:
                     st.success(f"Successfully added {drone_id}")
                     st.cache_data.clear()  # Clear cache to refresh the map
                     st.rerun()
+    
+    st.divider()
+    
+    # Add drone removal section
+    st.header("Remove Drone")
+    with st.form("remove_drone_form"):
+        drone_to_remove = st.selectbox(
+            "Select drone to remove",
+            options=data['drone_id'].tolist(),
+            key="drone_selector"
+        )
+        remove_submitted = st.form_submit_button("Remove Selected Drone")
+        
+        if remove_submitted:
+            if remove_drone(drone_to_remove):
+                st.success(f"Successfully removed {drone_to_remove}")
+                st.cache_data.clear()
+                st.rerun()
 
-data = load_data()
-# if st.checkbox('Show raw data'):
-#     st.subheader('Raw data')
-#     st.write(data)
 
 # Create a map centered on Astana
 m = folium.Map(location=[51.1694, 71.4491], zoom_start=12)
@@ -133,7 +178,7 @@ for _, drone in data.iterrows():
         <p>Last Update: {drone['created_at'].strftime('%H:%M:%S')}</p>
         <a href="https://www.youtube.com/watch?v=hXD8itTKdY0" target="_blank" 
            style='display: inline-block; background-color: #4CAF50; color: white; padding: 8px 16px; 
-           border: none; border-radius: 4px; cursor: pointer; text-decoration: none; text-align: center;'>
+           border: none; border-radius: 4px; cursor: pointer; text-decoration: none; text-align: center; width: 100%; margin-bottom: 8px;'>
            Stream Video
         </a>
     </div>
