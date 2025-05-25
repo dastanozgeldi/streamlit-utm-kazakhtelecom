@@ -9,6 +9,14 @@ from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
+# Debug database connection
+try:
+    conn = psycopg2.connect(st.secrets["db_url"])
+    st.success("Database connection successful!")
+    conn.close()
+except Exception as e:
+    st.error(f"Database connection failed: {str(e)}")
+
 # Set page to wide mode
 st.set_page_config(layout="wide")
 
